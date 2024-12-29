@@ -11,8 +11,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Gui.class)
 public class GuiMixin {
-    @Inject(method = "renderCrosshair(Lnet/minecraft/client/gui/GuiGraphics;)V", at = @At("HEAD"))
-    private void ic_air$renderInject(GuiGraphics guiGraphics, CallbackInfo ci) {
+    @Inject(method = "renderVehicleHealth(Lnet/minecraft/client/gui/GuiGraphics;)V", at = @At("HEAD"))
+    private void ic_air$renderVehicleHealth(GuiGraphics guiGraphics, CallbackInfo ci) {
         OverlayRenderer.renderOverlay(guiGraphics, Minecraft.getInstance().getFrameTime());
     }
 }

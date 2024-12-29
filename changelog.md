@@ -1,3 +1,11 @@
+# 1.1.6
+
+* Important changes for addons
+
+# 1.1.5
+
+* Fixed issues with inventory syncing
+
 # 1.1.3
 
 * Added damage multiplier in config
