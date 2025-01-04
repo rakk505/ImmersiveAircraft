@@ -1,6 +1,7 @@
 # 1.1.8
 
 * Maybe fixed concurrent addon loading issues on Forge
+* Maybe fixed multiplayer issues with turning of engines
 
 # 1.1.7
 
