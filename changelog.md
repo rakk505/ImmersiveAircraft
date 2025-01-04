@@ -1,3 +1,7 @@
+# 1.1.8
+
+* Maybe fixed concurrent addon loading issues on Forge
+
 # 1.1.7
 
 * A dummy update to fix a mess-up with file uploads

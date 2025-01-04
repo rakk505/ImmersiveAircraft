@@ -26,7 +26,7 @@ public class NetworkHandlerImpl extends NetworkHandler.Impl {
     private int id = 0;
 
     @Override
-    public <T extends Message> void registerMessage(Class<T> msg, Function<FriendlyByteBuf, T> constructor) {
+    synchronized public <T extends Message> void registerMessage(Class<T> msg, Function<FriendlyByteBuf, T> constructor) {
         channel.registerMessage(id++, msg,
                 Message::encode,
                 constructor,
@@ -53,5 +53,4 @@ public class NetworkHandlerImpl extends NetworkHandler.Impl {
     public void sendToTrackingPlayers(Message m, Entity origin) {
         channel.send(PacketDistributor.TRACKING_ENTITY.with(() -> origin), m);
     }
-
 }
