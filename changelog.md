@@ -2,6 +2,8 @@
 
 * Fixed some crashes
 * Fixed health bar position conflicts on Forge (thanks sfiomn!)
+* Added config flags
+    * `dropAircraft` to make aircraft non-pickup-able
 
 # 1.1.8
 

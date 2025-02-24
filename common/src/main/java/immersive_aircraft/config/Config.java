@@ -103,6 +103,9 @@ public final class Config extends JsonConfig {
     public boolean weaponsAreDestructive;
 
     @BooleanConfigEntry(true)
+    public boolean dropAircraft;
+
+    @BooleanConfigEntry(true)
     public boolean dropInventory;
 
     @BooleanConfigEntry(false)
