@@ -1,6 +1,7 @@
 # 1.2.0
 
 * Fixed some crashes
+* Fixed health bar position conflicts on Forge (thanks sfiomn!)
 
 # 1.1.8
 
