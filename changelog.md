@@ -1,3 +1,7 @@
+# 1.2.0
+
+* Fixed some crashes
+
 # 1.1.8
 
 * Maybe fixed concurrent addon loading issues on Forge
