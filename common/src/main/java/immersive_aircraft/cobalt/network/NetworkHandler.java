@@ -11,7 +11,11 @@ public abstract class NetworkHandler {
     private static Impl INSTANCE;
 
     public static <T extends Message> void registerMessage(Class<T> msg, Function<FriendlyByteBuf, T> constructor) {
-        INSTANCE.registerMessage(msg, constructor);
+        INSTANCE.registerMessage(Main.SHORT_MOD_ID, msg, constructor);
+    }
+
+    public static <T extends Message> void registerMessage(String namespace, Class<T> msg, Function<FriendlyByteBuf, T> constructor) {
+        INSTANCE.registerMessage(namespace, msg, constructor);
     }
 
     public static void sendToServer(Message m) {
@@ -29,10 +33,6 @@ public abstract class NetworkHandler {
     public abstract static class Impl {
         protected Impl() {
             INSTANCE = this;
-        }
-
-        public <T extends Message> void registerMessage(Class<T> msg, Function<FriendlyByteBuf, T> constructor) {
-            registerMessage(Main.SHORT_MOD_ID, msg, constructor);
         }
 
         public abstract <T extends Message> void registerMessage(String namespace, Class<T> msg, Function<FriendlyByteBuf, T> constructor);
