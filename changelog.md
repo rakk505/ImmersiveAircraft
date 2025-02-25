@@ -4,6 +4,9 @@
 * Fixed health bar position conflicts on Forge (thanks sfiomn!)
 * Added config flags
     * `dropAircraft` to make aircraft non-pickup-able
+    * `rotaryCannonDamage`
+    * `heavyCrossBowVelocity`
+    * `bombBayEntity` A mapping from ammo item to spawned entity
 
 # 1.1.8
 
