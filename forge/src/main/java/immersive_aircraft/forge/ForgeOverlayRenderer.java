@@ -13,9 +13,7 @@ public class ForgeOverlayRenderer {
     @SubscribeEvent
     public static void registerGuiOverlays(RegisterGuiOverlaysEvent event) {
         event.registerAbove(VanillaGuiOverlay.FOOD_LEVEL.id(), "ia_overlay",
-                (forgeGui, arg, f, i, j) -> {
-                    OverlayRenderer.renderOverlay(arg, f, forgeGui.rightHeight);
-                    forgeGui.rightHeight += 10;
-                });
+                (forgeGui, arg, f, i, j) ->
+                        forgeGui.rightHeight += OverlayRenderer.renderOverlay(arg, f, forgeGui.rightHeight));
     }
 }

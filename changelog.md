@@ -1,3 +1,7 @@
+# 1.2.1
+
+* Fixed air bubbles and other bars being offset
+
 # 1.2.0
 
 * Fixed some crashes

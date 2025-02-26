@@ -19,7 +19,7 @@ public class OverlayRenderer {
     private float bootUp = 0.0f;
     private float lastTime = 0.0f;
 
-    public static void renderOverlay(GuiGraphics context, float tickDelta, int barHeightOffset) {
+    public static int renderOverlay(GuiGraphics context, float tickDelta, int barHeightOffset) {
         Minecraft client = Minecraft.getInstance();
         if (client.gameMode != null && client.player != null) {
             if (Config.getInstance().showHotbarEngineGauge && client.player.getRootVehicle() instanceof EngineVehicle aircraft) {
@@ -27,8 +27,10 @@ public class OverlayRenderer {
             }
             if (client.player.getRootVehicle() instanceof VehicleEntity vehicle) {
                 INSTANCE.renderAircraftHealth(client, context, vehicle, barHeightOffset);
+                return 10;
             }
         }
+        return 0;
     }
 
     private void renderAircraftHealth(Minecraft minecraft, GuiGraphics context, VehicleEntity vehicle, int barHeightOffset) {
