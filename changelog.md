@@ -1,3 +1,7 @@
+# 1.2.2
+
+* Updated API related stuff
+
 # 1.2.1
 
 * Fixed air bubbles and other bars being offset
