@@ -49,7 +49,7 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
 
         this.initInventory();
 
-        this.properties = new VehicleProperties(VehicleDataLoader.get(identifier).getProperties(), this);
+        this.properties = new VehicleProperties(getVehicleData().getProperties(), this);
     }
 
     public VehicleProperties getProperties() {
@@ -57,7 +57,7 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
     }
 
     public VehicleInventoryDescription getInventoryDescription() {
-        return VehicleDataLoader.get(identifier).getInventoryDescription();
+        return getVehicleData().getInventoryDescription();
     }
 
     private static final List<WeaponMount> EMPTY_WEAPONS = List.of(WeaponMount.EMPTY);
@@ -66,7 +66,7 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
     public List<WeaponMount> getWeaponMounts(int slot) {
         ItemStack stack = getSlot(slot).get();
         if (stack.getItem() instanceof WeaponItem weaponItem) {
-            return VehicleDataLoader.get(identifier).getWeaponMounts().getOrDefault(slot, EMPTY_WEAPONS_MAP).getOrDefault(weaponItem.getMountType(), EMPTY_WEAPONS);
+            return getVehicleData().getWeaponMounts().getOrDefault(slot, EMPTY_WEAPONS_MAP).getOrDefault(weaponItem.getMountType(), EMPTY_WEAPONS);
         }
         return EMPTY_WEAPONS;
     }
