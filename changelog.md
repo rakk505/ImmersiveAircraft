@@ -2,9 +2,6 @@
 
 * Added the Bamboo Hopper
 * Made trails data driven
-
-# 1.2.3
-
 * Fixed a crash
 
 # 1.2.2

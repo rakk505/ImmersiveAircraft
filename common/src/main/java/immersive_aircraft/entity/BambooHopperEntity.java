@@ -1,9 +1,11 @@
 package immersive_aircraft.entity;
 
 import immersive_aircraft.Items;
+import immersive_aircraft.Sounds;
 import immersive_aircraft.entity.misc.TrailDescriptor;
 import immersive_aircraft.item.upgrade.VehicleStat;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
@@ -80,12 +82,22 @@ public class BambooHopperEntity extends AirplaneEntity {
     }
 
     @Override
+    protected float getDismountRotation() {
+        return 0.0f;
+    }
+
+    @Override
     public double getZoom() {
         return 6.0;
     }
 
     @Override
-    protected float getDismountRotation() {
-        return 0.0f;
+    protected SoundEvent getEngineStartSound() {
+        return Sounds.ENGINE_START_BAMBOO_HOPPER.get();
+    }
+
+    @Override
+    protected SoundEvent getEngineSound() {
+        return Sounds.PROPELLER_BAMBOO_HOPPER.get();
     }
 }
