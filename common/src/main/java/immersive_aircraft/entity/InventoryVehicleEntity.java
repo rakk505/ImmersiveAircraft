@@ -281,13 +281,17 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
         return getProperties().get(VehicleStat.GROUND_FRICTION);
     }
 
+    protected float getWaterDecay() {
+        return getProperties().get(VehicleStat.WATER_FRICTION);
+    }
+
     protected void applyFriction() {
         // Decay is the basic factor of friction, basically the density of the material slowing down the vehicle
         float decay = 1.0f - getProperties().get(VehicleStat.FRICTION);
         float gravity = getGravity();
         if (wasTouchingWater) {
             gravity *= 0.25f;
-            decay = 0.9f;
+            decay = getWaterDecay();
         } else if (onGround()) {
             if (isVehicle()) {
                 decay = getGroundDecay();

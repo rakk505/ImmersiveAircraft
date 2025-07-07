@@ -23,6 +23,7 @@ import java.util.List;
  */
 public abstract class AircraftEntity extends EngineVehicle {
     protected double lastY;
+    public float inWaterLevel;
 
     public AircraftEntity(EntityType<? extends AircraftEntity> entityType, Level world, boolean canExplodeOnCrash) {
         super(entityType, world, canExplodeOnCrash);
@@ -74,7 +75,7 @@ public abstract class AircraftEntity extends EngineVehicle {
         if (onGround()) {
             setZRot(roll * 0.9f);
         } else {
-            setZRot(-pressingInterpolatedX.getSmooth() * getProperties().get(VehicleStat.ROLL_FACTOR));
+            setZRot(-pressingInterpolatedX.getSmooth() * getProperties().get(VehicleStat.ROLL_FACTOR) * (1.0f - inWaterLevel));
         }
 
         // Fixes broken states
@@ -90,6 +91,13 @@ public abstract class AircraftEntity extends EngineVehicle {
                 TrailDescriptor trail = trailDescriptors.get(i);
                 recordTrail(vehicleTransform, i, trail);
             }
+        }
+
+        // Water
+        if (wasTouchingWater) {
+            inWaterLevel = Math.min(1.0f, inWaterLevel + 0.05f);
+        } else {
+            inWaterLevel = Math.max(0.0f, inWaterLevel - 0.05f);
         }
 
         super.tick();
@@ -124,7 +132,7 @@ public abstract class AircraftEntity extends EngineVehicle {
 
     @Override
     protected void updateVelocity() {
-        // get direction
+        // get the direction
         Vector3f direction = getForwardDirection();
 
         // glide
@@ -143,7 +151,7 @@ public abstract class AircraftEntity extends EngineVehicle {
         if (onGround()) {
             // Landing
             setXRot((getXRot() + getProperties().get(VehicleStat.GROUND_PITCH)) * 0.9f - getProperties().get(VehicleStat.GROUND_PITCH));
-        } else {
+        } else if (!wasTouchingWater) {
             // Wind
             Vector3f effect = getWindEffect();
             setXRot(getXRot() + effect.x);

@@ -598,13 +598,17 @@ public abstract class VehicleEntity extends Entity {
         }
     }
 
-    private Vec3 getDismountOffset(double vehicleWidth, double passengerWidth) {
+    protected Vec3 getDismountOffset(double vehicleWidth, double passengerWidth) {
         double offset = (vehicleWidth + passengerWidth + (double) 1.0E-5f) / 2.0;
-        float yaw = getYRot() + 90.0f;
+        float yaw = getYRot() + getDismountRotation();
         float x = -Mth.sin(yaw * ((float) Math.PI / 180));
         float z = Mth.cos(yaw * ((float) Math.PI / 180));
         float n = Math.max(Math.abs(x), Math.abs(z));
         return new Vec3((double) x * offset / (double) n, 0.0, (double) z * offset / (double) n);
+    }
+
+    protected float getDismountRotation() {
+        return 90.0f;
     }
 
     @Override
@@ -891,8 +895,6 @@ public abstract class VehicleEntity extends Entity {
     public Vector3f getTopDirection() {
         return transformVector(0.0f, 1.0f, 0.0f);
     }
-
-    protected static final Vector4f ZERO_VEC4 = new Vector4f();
 
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {

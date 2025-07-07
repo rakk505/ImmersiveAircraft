@@ -1,10 +1,15 @@
+# 1.3.0
+
+* Added the Bamboo Hopper
+* Made trails data driven
+
 # 1.2.3
 
 * Fixed a crash
 
 # 1.2.2
 
-* Updated API related stuff
+* Updated API-related stuff
 
 # 1.2.1
 
