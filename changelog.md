@@ -1,3 +1,7 @@
+# 1.4.1
+
+* Fixed stack overflow on explosions (again)
+
 # 1.4.0
 
 * Added mechanical dials and hud (Thanks donmor!)
