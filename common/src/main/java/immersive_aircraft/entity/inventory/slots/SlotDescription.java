@@ -2,6 +2,7 @@ package immersive_aircraft.entity.inventory.slots;
 
 import com.google.gson.JsonObject;
 import immersive_aircraft.entity.InventoryVehicleEntity;
+import immersive_aircraft.screen.slot.InventorySlot;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
@@ -31,7 +32,7 @@ public class SlotDescription {
     }
 
     public Slot getSlot(InventoryVehicleEntity vehicle, Container inventory) {
-        return new Slot(inventory, index, x, y);
+        return new InventorySlot(inventory, index, x, y);
     }
 
     public void encode(FriendlyByteBuf buffer) {
