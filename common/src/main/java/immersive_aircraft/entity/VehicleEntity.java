@@ -203,6 +203,9 @@ public abstract class VehicleEntity extends Entity {
 
     @Override
     public boolean canCollideWith(@NotNull Entity other) {
+        if (other instanceof Player && !hasPassenger(other)) {
+            return false;
+        }
         return canCollide(this, other);
     }
 
@@ -213,6 +216,11 @@ public abstract class VehicleEntity extends Entity {
     @Override
     public boolean canBeCollidedWith() {
         return true;
+    }
+
+    @Override
+    public boolean isPushable() {
+        return false;
     }
 
     @Override
