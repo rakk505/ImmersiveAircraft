@@ -17,8 +17,8 @@ public class BBObject {
     public final boolean visibility;
 
     public BBObject(JsonObject element) {
-        this.uuid = element.getAsJsonPrimitive("uuid").getAsString();
-        this.name = element.getAsJsonPrimitive("name").getAsString();
+        this.uuid = element.has("uuid") ? element.getAsJsonPrimitive("uuid").getAsString() : "";
+        this.name = element.has("name") ? element.getAsJsonPrimitive("name").getAsString() : "";
 
         this.origin = Utils.parseVector(element, "origin");
         this.origin.mul(1.0f / 16.0f);
@@ -28,7 +28,7 @@ public class BBObject {
         this.color = Utils.getIntElement(element, "color");
 
         this.export = Utils.getBooleanElement(element, "export");
-        this.visibility = Utils.getBooleanElement(element, "visibility");
+        this.visibility = !element.has("visibility") || element.getAsJsonPrimitive("visibility").getAsBoolean();
     }
 
     public String getName() {
