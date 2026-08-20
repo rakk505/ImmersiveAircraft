@@ -27,7 +27,7 @@ public class GyrodyneEntity extends Rotorcraft {
         return Sounds.WOOSH.get();
     }
 
-    protected SoundEvent getEngineSound() {
+    public SoundEvent getEngineSound() {
         return Sounds.WOOSH.get();
     }
 

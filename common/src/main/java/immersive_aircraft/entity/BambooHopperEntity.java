@@ -97,7 +97,7 @@ public class BambooHopperEntity extends AirplaneEntity {
     }
 
     @Override
-    protected SoundEvent getEngineSound() {
+    public SoundEvent getEngineSound() {
         return Sounds.PROPELLER_BAMBOO_HOPPER.get();
     }
 }

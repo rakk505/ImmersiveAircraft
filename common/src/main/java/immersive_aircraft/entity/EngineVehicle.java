@@ -43,7 +43,6 @@ public abstract class EngineVehicle extends InventoryVehicleEntity {
     public final InterpolatedFloat engineRotation = new InterpolatedFloat();
     public final InterpolatedFloat enginePower = new InterpolatedFloat(20.0f);
     public float engineSpinUpStrength = 0.0f;
-    public float engineSound = 0.0f;
     public int mainWarning = 0;
     public int mslWarning = 0;
     public final EnumMap<Cautions, Integer> cautions = new EnumMap<>(Cautions.class);
@@ -91,15 +90,15 @@ public abstract class EngineVehicle extends InventoryVehicleEntity {
         return Sounds.ENGINE_START.get();
     }
 
-    protected SoundEvent getEngineSound() {
+    public SoundEvent getEngineSound() {
         return Sounds.PROPELLER.get();
     }
 
-    protected float getEngineVolume() {
+    public float getEngineVolume() {
         return 0.25f;
     }
 
-    protected float getEnginePitch() {
+    public float getEnginePitch() {
         return 1.0f;
     }
 
@@ -141,18 +140,6 @@ public abstract class EngineVehicle extends InventoryVehicleEntity {
         // shutdown
         if (!isVehicle() && getEngineTarget() > 0) {
             setEngineTarget(0.0f);
-        }
-
-        // Engine sounds
-        if (level().isClientSide) {
-            engineSound += getEnginePower() * 0.25f;
-            if (engineSound > 1.0f) {
-                engineSound--;
-                if (isFuelLow()) {
-                    engineSound -= random.nextInt(2);
-                }
-                level().playLocalSound(getX(), getY() + getBbHeight() * 0.5, getZ(), getEngineSound(), getSoundSource(), Math.min(1.0f, getEngineVolume() + engineSpinUpStrength), (random.nextFloat() * 0.1f + 0.95f) * getEnginePitch(), false);
-            }
         }
 
         // Fuel

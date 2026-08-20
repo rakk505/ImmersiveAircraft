@@ -11,6 +11,7 @@ import immersive_aircraft.entity.misc.VehicleProperties;
 import immersive_aircraft.entity.misc.WeaponMount;
 import immersive_aircraft.entity.weapon.Telescope;
 import immersive_aircraft.entity.weapon.Weapon;
+import immersive_aircraft.item.VehiclePickupItem;
 import immersive_aircraft.item.WeaponItem;
 import immersive_aircraft.item.upgrade.VehicleStat;
 import immersive_aircraft.item.upgrade.VehicleUpgrade;
@@ -18,9 +19,11 @@ import immersive_aircraft.item.upgrade.VehicleUpgradeRegistry;
 import immersive_aircraft.mixin.ServerPlayerEntityMixin;
 import immersive_aircraft.network.s2c.OpenGuiRequest;
 import immersive_aircraft.screen.VehicleScreenHandler;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.Entity;
@@ -150,6 +153,23 @@ public abstract class InventoryVehicleEntity extends DyeableVehicleEntity implem
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
+        if (player.getItemInHand(hand).getItem() instanceof VehiclePickupItem) {
+            if (!player.level().isClientSide) {
+                if (getFirstPassenger() != null) {
+                    player.displayClientMessage(Component.translatable("immersive_aircraft.cannot_pickup_occupied").withStyle(ChatFormatting.RED), true);
+                    return InteractionResult.CONSUME;
+                }
+
+                ItemStack vehicleStack = new ItemStack(asItem());
+                CompoundTag tag = vehicleStack.getOrCreateTag();
+                addItemTag(tag);
+                if (!player.getInventory().add(vehicleStack)) {
+                    spawnAtLocation(vehicleStack);
+                }
+                discard();
+            }
+            return InteractionResult.CONSUME;
+        }
         if (getHealth() >= 1.0) {
             if (!player.level().isClientSide && player.isSecondaryUseActive() && !isPassengerOfSameVehicle(player)) {
                 Entity primaryPassenger = getFirstPassenger();

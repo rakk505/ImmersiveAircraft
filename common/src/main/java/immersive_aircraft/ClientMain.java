@@ -1,6 +1,7 @@
 package immersive_aircraft;
 
 import immersive_aircraft.client.KeyBindings;
+import immersive_aircraft.client.sound.AircraftSoundManager;
 import immersive_aircraft.config.Config;
 import immersive_aircraft.entity.InventoryVehicleEntity;
 import immersive_aircraft.entity.VehicleEntity;
@@ -77,5 +78,7 @@ public class ClientMain {
         } else {
             activeTicks = 0;
         }
+
+        AircraftSoundManager.tick();
     }
 }

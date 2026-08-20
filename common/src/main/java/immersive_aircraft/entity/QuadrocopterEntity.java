@@ -23,7 +23,7 @@ public class QuadrocopterEntity extends Rotorcraft {
         return 5;
     }
 
-    protected SoundEvent getEngineSound() {
+    public SoundEvent getEngineSound() {
         return Sounds.PROPELLER_TINY.get();
     }
 

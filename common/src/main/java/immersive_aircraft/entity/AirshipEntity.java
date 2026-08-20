@@ -24,7 +24,7 @@ public class AirshipEntity extends Rotorcraft {
         return 50.0f;
     }
 
-    protected SoundEvent getEngineSound() {
+    public SoundEvent getEngineSound() {
         return Sounds.PROPELLER_SMALL.get();
     }
 

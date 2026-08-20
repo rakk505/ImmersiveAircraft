@@ -66,7 +66,7 @@ public class WarshipEntity extends AirshipEntity {
     }
 
     @Override
-    protected SoundEvent getEngineSound() {
+    public SoundEvent getEngineSound() {
         return Sounds.WARSHIP.get();
     }
 
