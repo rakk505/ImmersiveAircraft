@@ -4,6 +4,7 @@ import immersive_aircraft.ClientMain;
 import immersive_aircraft.Main;
 import immersive_aircraft.cobalt.network.NetworkHandler;
 import immersive_aircraft.entity.VehicleEntity;
+import immersive_aircraft.entity.VehiclePersistence;
 import immersive_aircraft.forge.cobalt.registration.RegistrationImpl.DataLoaderRegister;
 import immersive_aircraft.item.upgrade.VehicleStat;
 import immersive_aircraft.item.upgrade.VehicleUpgrade;
@@ -12,6 +13,7 @@ import immersive_aircraft.network.s2c.AircraftDataMessage;
 import immersive_aircraft.network.s2c.VehicleUpgradesMessage;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraftforge.event.AddReloadListenerEvent;
@@ -21,6 +23,7 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -90,6 +93,42 @@ public class ForgeBusEvents {
     public static void onPlayerBreakSpeed(PlayerEvent.BreakSpeed event) {
         if (event.getEntity().getRootVehicle() instanceof VehicleEntity) {
             event.setNewSpeed(event.getOriginalSpeed() * 5.0f);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            var server = ServerLifecycleHooks.getCurrentServer();
+            if (server != null) {
+                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                    VehiclePersistence.trackTick(player);
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            ServerLevel level = player.serverLevel();
+            VehiclePersistence.confirmDisconnect(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            ServerLevel level = player.serverLevel();
+            VehiclePersistence.get(level).restoreVehicle(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            ServerLevel level = player.serverLevel();
+            VehiclePersistence.get(level).restoreVehicle(player);
         }
     }
 }
