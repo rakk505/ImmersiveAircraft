@@ -1,0 +1,8 @@
+{
+  "entity.immersive_aircraft.quadrocopter": "Militech AV",
+  "item.immersive_aircraft.quadrocopter": "Militech AV",
+  "item.immersive_aircraft.quadrocopter.description": "Armored VTOL aircraft. Hover, strafe, and fly using quadrocopter controls.",
+  "entity.immersive_aircraft.cargo_airship": "Trauma Team Atlus",
+  "item.immersive_aircraft.cargo_airship": "Trauma Team Atlus",
+  "item.immersive_aircraft.cargo_airship.description": "Emergency-response VTOL. Hover and fly using cargo airship controls."
+}
