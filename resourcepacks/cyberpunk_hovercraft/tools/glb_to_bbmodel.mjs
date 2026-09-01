@@ -283,7 +283,9 @@ function main() {
       const uvb = primitive.texcoords[ib] ?? [0, 0];
       const uvc = primitive.texcoords[ic] ?? [0, 0];
       const uvm = [(uva[0] + uvc[0]) / 2, (uva[1] + uvc[1]) / 2];
-      const toUv = ([u, v]) => [round(u * textureWidth), round((1 - v) * textureHeight)];
+      // glTF and Blockbench both define (0, 0) at the upper-left of the image.
+      // Flipping V here points each face at an unrelated mirrored atlas island.
+      const toUv = ([u, v]) => [round(u * textureWidth), round(v * textureHeight)];
       faces[`f${triangleCount}`] = {
         uv: {
           [keys[0]]: toUv(uva),
