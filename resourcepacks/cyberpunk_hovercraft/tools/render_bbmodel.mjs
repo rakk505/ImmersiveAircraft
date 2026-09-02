@@ -13,7 +13,6 @@ function parseArgs(argv) {
     elevation: "24",
     "part-colors": "false",
     "pod-tilt": "0",
-    "fan-angle": "0",
   };
   for (let i = 0; i < argv.length; i += 2) args[argv[i].replace(/^--/u, "")] = argv[i + 1];
   for (const key of ["model", "texture", "output"]) {
@@ -47,7 +46,7 @@ function rotateAround(point, origin, rotation) {
   return add(rotateXYZ(subtract(point, origin), rotation), origin);
 }
 
-function elementTransforms(model, podTilt, fanAngle) {
+function elementTransforms(model, podTilt) {
   const transforms = new Map();
   const visit = (entry, ancestors) => {
     if (typeof entry === "string") {
@@ -56,7 +55,6 @@ function elementTransforms(model, podTilt, fanAngle) {
     }
     const rotation = [...(entry.rotation ?? [0, 0, 0])];
     if (entry.name?.endsWith("_vtol")) rotation[0] += podTilt;
-    if (entry.name?.endsWith("_fan")) rotation[1] += fanAngle;
     const transform = {origin: (entry.origin ?? [0, 0, 0]).map((value) => value / 16), rotation};
     for (const child of entry.children ?? []) visit(child, [...ancestors, transform]);
   };
@@ -86,33 +84,70 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const size = Number(args.size);
   const model = JSON.parse(fs.readFileSync(args.model, "utf8"));
-  const transforms = elementTransforms(model, Number(args["pod-tilt"]), Number(args["fan-angle"]));
-  const textureFile = fs.readFileSync(args.texture);
-  const [textureWidth, textureHeight] = pngSize(textureFile);
-  const decoded = spawnSync("ffmpeg", [
-    "-hide_banner", "-loglevel", "error", "-i", args.texture,
-    "-f", "rawvideo", "-pix_fmt", "rgba", "pipe:1",
-  ], {maxBuffer: textureWidth * textureHeight * 8});
-  if (decoded.status !== 0) throw new Error(decoded.stderr.toString());
-  const texture = decoded.stdout;
+  const transforms = elementTransforms(model, Number(args["pod-tilt"]));
+  const decodeTexture = (buffer) => {
+    const [width, height] = pngSize(buffer);
+    const decoded = spawnSync("ffmpeg", [
+      "-hide_banner", "-loglevel", "error", "-i", "pipe:0",
+      "-f", "rawvideo", "-pix_fmt", "rgba", "pipe:1",
+    ], {input: buffer, maxBuffer: width * height * 8});
+    if (decoded.status !== 0) throw new Error(decoded.stderr.toString());
+    return {width, height, pixels: decoded.stdout};
+  };
+  const textures = (model.textures ?? []).map((entry, index) => {
+    if (index === 0) return decodeTexture(fs.readFileSync(args.texture));
+    const match = entry.source?.match(/^data:image\/png;base64,(.+)$/u);
+    if (match) return decodeTexture(Buffer.from(match[1], "base64"));
+    const filename = path.resolve(path.dirname(args.model), entry.relative_path ?? entry.name);
+    return decodeTexture(fs.readFileSync(filename));
+  });
+  if (!textures.length) textures.push(decodeTexture(fs.readFileSync(args.texture)));
 
   const triangles = [];
   for (const [elementIndex, element] of (model.elements ?? []).entries()) {
-    if (element.type !== "mesh") continue;
     const origin = element.origin ?? [0, 0, 0];
-    for (const face of Object.values(element.faces ?? {})) {
-      if (!face.vertices || face.vertices.length < 3 || face.texture === null) continue;
-      const keys = face.vertices.slice(0, 3);
-      const points = keys.map((key) => {
-        let point = add(element.vertices[key], origin).map((value) => value / 16);
-        const chain = transforms.get(element.uuid) ?? [];
-        for (let i = chain.length - 1; i >= 0; i--) {
-          point = rotateAround(point, chain[i].origin, chain[i].rotation);
-        }
-        return point;
-      });
-      const uvs = keys.map((key) => face.uv[key]);
-      triangles.push({points, uvs, elementIndex, elementName: element.name});
+    const pose = (rawPoint, cube = false) => {
+      let point = rawPoint.map((value) => value / 16);
+      if (cube) point = rotateAround(point, origin.map((value) => value / 16), element.rotation ?? [0, 0, 0]);
+      else point = add(point, origin.map((value) => value / 16));
+      const chain = transforms.get(element.uuid) ?? [];
+      for (let i = chain.length - 1; i >= 0; i--) point = rotateAround(point, chain[i].origin, chain[i].rotation);
+      return point;
+    };
+    const pushTriangle = (points, uvs, textureIndex) => triangles.push({
+      points,
+      uvs,
+      textureIndex,
+      colorIndex: element.color ?? elementIndex,
+      elementName: element.name,
+    });
+
+    if (element.type === "mesh") {
+      for (const face of Object.values(element.faces ?? {})) {
+        if (!face.vertices || face.vertices.length < 3 || face.texture === null) continue;
+        const keys = face.vertices.slice(0, 3);
+        pushTriangle(keys.map((key) => pose(element.vertices[key])), keys.map((key) => face.uv[key]), face.texture ?? 0);
+      }
+    } else if (element.type === "cube") {
+      const [x0, y0, z0] = element.from;
+      const [x1, y1, z1] = element.to;
+      const quads = {
+        north: [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]],
+        east: [[x1, y0, z0], [x1, y0, z1], [x1, y1, z1], [x1, y1, z0]],
+        south: [[x1, y0, z1], [x0, y0, z1], [x0, y1, z1], [x1, y1, z1]],
+        west: [[x0, y0, z1], [x0, y0, z0], [x0, y1, z0], [x0, y1, z1]],
+        up: [[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]],
+        down: [[x0, y0, z1], [x1, y0, z1], [x1, y0, z0], [x0, y0, z0]],
+      };
+      for (const [side, rawPoints] of Object.entries(quads)) {
+        const face = element.faces?.[side];
+        if (!face || face.texture === null) continue;
+        const [u0, v0, u1, v1] = face.uv;
+        const uv = [[u0, v1], [u1, v1], [u1, v0], [u0, v0]];
+        const points = rawPoints.map((point) => pose(point, true));
+        pushTriangle([points[0], points[1], points[2]], [uv[0], uv[1], uv[2]], face.texture ?? 0);
+        pushTriangle([points[0], points[2], points[3]], [uv[0], uv[2], uv[3]], face.texture ?? 0);
+      }
     }
   }
   if (!triangles.length) throw new Error("No textured mesh triangles found");
@@ -122,7 +157,7 @@ function main() {
   const maximum = [0, 1, 2].map((axis) => Math.max(...allPoints.map((point) => point[axis])));
   const center = scale(add(minimum, maximum), 0.5);
   const yaw = Number(args.yaw) * Math.PI / 180;
-  const elevation = Number(args.elevation) * Math.PI / 180;
+  const elevation = Number(args.pitch ?? args.elevation) * Math.PI / 180;
   const cameraDirection = normalize([
     Math.sin(yaw) * Math.cos(elevation),
     Math.sin(elevation),
@@ -176,17 +211,18 @@ function main() {
 
         const u = w0 * triangle.uvs[0][0] + w1 * triangle.uvs[1][0] + w2 * triangle.uvs[2][0];
         const v = w0 * triangle.uvs[0][1] + w1 * triangle.uvs[1][1] + w2 * triangle.uvs[2][1];
-        const tx = Math.max(0, Math.min(textureWidth - 1, Math.round(u)));
-        const ty = Math.max(0, Math.min(textureHeight - 1, Math.round(v)));
-        const source = (ty * textureWidth + tx) * 4;
+        const texture = textures[triangle.textureIndex] ?? textures[0];
+        const tx = Math.max(0, Math.min(texture.width - 1, Math.round(u)));
+        const ty = Math.max(0, Math.min(texture.height - 1, Math.round(v)));
+        const source = (ty * texture.width + tx) * 4;
         const target = pixel * 4;
         const color = args["part-colors"] === "true"
-          ? PART_COLORS[triangle.elementIndex % PART_COLORS.length]
-          : [texture[source], texture[source + 1], texture[source + 2]];
+          ? PART_COLORS[triangle.colorIndex % PART_COLORS.length]
+          : [texture.pixels[source], texture.pixels[source + 1], texture.pixels[source + 2]];
         output[target] = Math.min(255, Math.round(color[0] * shade));
         output[target + 1] = Math.min(255, Math.round(color[1] * shade));
         output[target + 2] = Math.min(255, Math.round(color[2] * shade));
-        output[target + 3] = texture[source + 3];
+        output[target + 3] = texture.pixels[source + 3];
       }
     }
   }
