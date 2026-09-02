@@ -7,7 +7,14 @@ import path from "node:path";
 import {spawnSync} from "node:child_process";
 
 function parseArgs(argv) {
-  const args = {size: "512", yaw: "35", elevation: "24"};
+  const args = {
+    size: "512",
+    yaw: "35",
+    elevation: "24",
+    "part-colors": "false",
+    "pod-tilt": "0",
+    "fan-angle": "0",
+  };
   for (let i = 0; i < argv.length; i += 2) args[argv[i].replace(/^--/u, "")] = argv[i + 1];
   for (const key of ["model", "texture", "output"]) {
     if (!args[key]) throw new Error(`Missing --${key}`);
@@ -27,10 +34,59 @@ const dot = (a, b) => a.reduce((sum, value, i) => sum + value * b[i], 0);
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const normalize = (a) => scale(a, 1 / Math.hypot(...a));
 
+function rotateXYZ(point, rotation) {
+  const [rx, ry, rz] = rotation.map((value) => value * Math.PI / 180);
+  let [x, y, z] = point;
+  [y, z] = [y * Math.cos(rx) - z * Math.sin(rx), y * Math.sin(rx) + z * Math.cos(rx)];
+  [x, z] = [x * Math.cos(ry) + z * Math.sin(ry), -x * Math.sin(ry) + z * Math.cos(ry)];
+  [x, y] = [x * Math.cos(rz) - y * Math.sin(rz), x * Math.sin(rz) + y * Math.cos(rz)];
+  return [x, y, z];
+}
+
+function rotateAround(point, origin, rotation) {
+  return add(rotateXYZ(subtract(point, origin), rotation), origin);
+}
+
+function elementTransforms(model, podTilt, fanAngle) {
+  const transforms = new Map();
+  const visit = (entry, ancestors) => {
+    if (typeof entry === "string") {
+      transforms.set(entry, ancestors);
+      return;
+    }
+    const rotation = [...(entry.rotation ?? [0, 0, 0])];
+    if (entry.name?.endsWith("_vtol")) rotation[0] += podTilt;
+    if (entry.name?.endsWith("_fan")) rotation[1] += fanAngle;
+    const transform = {origin: (entry.origin ?? [0, 0, 0]).map((value) => value / 16), rotation};
+    for (const child of entry.children ?? []) visit(child, [...ancestors, transform]);
+  };
+  for (const entry of model.outliner ?? []) visit(entry, []);
+  return transforms;
+}
+
+const PART_COLORS = [
+  [245, 84, 84],
+  [66, 165, 245],
+  [255, 202, 58],
+  [82, 190, 128],
+  [171, 100, 226],
+  [255, 145, 64],
+  [48, 207, 207],
+  [236, 96, 170],
+  [166, 201, 87],
+  [112, 128, 242],
+  [230, 219, 96],
+  [174, 122, 76],
+  [120, 220, 174],
+  [211, 130, 244],
+  [112, 199, 241],
+];
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const size = Number(args.size);
   const model = JSON.parse(fs.readFileSync(args.model, "utf8"));
+  const transforms = elementTransforms(model, Number(args["pod-tilt"]), Number(args["fan-angle"]));
   const textureFile = fs.readFileSync(args.texture);
   const [textureWidth, textureHeight] = pngSize(textureFile);
   const decoded = spawnSync("ffmpeg", [
@@ -41,15 +97,22 @@ function main() {
   const texture = decoded.stdout;
 
   const triangles = [];
-  for (const element of model.elements ?? []) {
+  for (const [elementIndex, element] of (model.elements ?? []).entries()) {
     if (element.type !== "mesh") continue;
     const origin = element.origin ?? [0, 0, 0];
     for (const face of Object.values(element.faces ?? {})) {
       if (!face.vertices || face.vertices.length < 3 || face.texture === null) continue;
       const keys = face.vertices.slice(0, 3);
-      const points = keys.map((key) => add(element.vertices[key], origin).map((value) => value / 16));
+      const points = keys.map((key) => {
+        let point = add(element.vertices[key], origin).map((value) => value / 16);
+        const chain = transforms.get(element.uuid) ?? [];
+        for (let i = chain.length - 1; i >= 0; i--) {
+          point = rotateAround(point, chain[i].origin, chain[i].rotation);
+        }
+        return point;
+      });
       const uvs = keys.map((key) => face.uv[key]);
-      triangles.push({points, uvs});
+      triangles.push({points, uvs, elementIndex, elementName: element.name});
     }
   }
   if (!triangles.length) throw new Error("No textured mesh triangles found");
@@ -117,9 +180,12 @@ function main() {
         const ty = Math.max(0, Math.min(textureHeight - 1, Math.round(v)));
         const source = (ty * textureWidth + tx) * 4;
         const target = pixel * 4;
-        output[target] = Math.min(255, Math.round(texture[source] * shade));
-        output[target + 1] = Math.min(255, Math.round(texture[source + 1] * shade));
-        output[target + 2] = Math.min(255, Math.round(texture[source + 2] * shade));
+        const color = args["part-colors"] === "true"
+          ? PART_COLORS[triangle.elementIndex % PART_COLORS.length]
+          : [texture[source], texture[source + 1], texture[source + 2]];
+        output[target] = Math.min(255, Math.round(color[0] * shade));
+        output[target + 1] = Math.min(255, Math.round(color[1] * shade));
+        output[target + 2] = Math.min(255, Math.round(color[2] * shade));
         output[target + 3] = texture[source + 3];
       }
     }
@@ -133,6 +199,11 @@ function main() {
   ], {input: output, maxBuffer: size * size * 8});
   if (encoded.status !== 0) throw new Error(encoded.stderr.toString());
   console.log(`${args.output} ${size}x${size} (${triangles.length} triangles)`);
+  if (args["part-colors"] === "true") {
+    for (const [index, element] of (model.elements ?? []).entries()) {
+      if (element.type === "mesh") console.log(`${index}: ${element.name} rgb(${PART_COLORS[index % PART_COLORS.length].join(",")})`);
+    }
+  }
 }
 
 main();

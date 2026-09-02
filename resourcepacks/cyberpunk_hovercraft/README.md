@@ -72,6 +72,18 @@ Aircraft 1.20.1 accepts only four-vertex mesh faces, so the converter closes eac
 source triangle with one collinear vertex. That keeps the visible geometry
 unchanged while satisfying the loader without a Java patch.
 
+Each aircraft is organized as a multipart Blockbench rig rather than one flat
+mesh. The outliner exposes the hull, cockpit, roof, rear section, landing gear,
+left/right doors, four VTOL pods, and four nested fan rotors. The pod pivots tilt
+with forward/reverse input and the fan bones spin from the inherited engine
+animation variable. Doors and landing gear remain independently selectable for
+future animation, but the resource pack does not add new key bindings.
+
+The right-hand renders below use diagnostic colors to show the individual
+Blockbench mesh elements; the left-hand renders use the shipped textures.
+
+![Textured aircraft and multipart Blockbench diagnostics](multipart_model.png)
+
 To regenerate a runtime model after editing an optimized GLB, export an
 uncompressed GLB with its base-color UVs, save the base-color map as PNG, and
 run:
@@ -79,13 +91,21 @@ run:
 ```bash
 node tools/glb_to_bbmodel.mjs \
   --input source/militech_av.glb \
-  --output assets/immersive_aircraft/objects/airship.bbmodel \
+  --output /tmp/airship-flat.bbmodel \
   --texture assets/immersive_aircraft/textures/entity/militech_av.png \
   --texture-name militech_av.png \
   --length-blocks 8 \
   --forward-sign -1 \
   --name body
+
+node tools/rig_bbmodel.mjs \
+  --input /tmp/airship-flat.bbmodel \
+  --output assets/immersive_aircraft/objects/airship.bbmodel \
+  --profile militech_av
 ```
+
+Use the `trauma_atlus` profile and `cargo_airship` output names for the Trauma
+Team model.
 
 The negative forward sign keeps each cockpit/nose on the vehicle's forward
 side and the fins, rear deck, and exhaust points on the trailing side.
@@ -99,6 +119,10 @@ node tools/render_bbmodel.mjs \
   --texture assets/immersive_aircraft/textures/entity/militech_av.png \
   --output /tmp/militech_av.png
 ```
+
+Add `--part-colors true` to replace the texture with one diagnostic color per
+mesh element. This is useful for checking the semantic split and pod seams.
+Use `--pod-tilt -12 --fan-angle 35` to preview the articulated flight pose.
 
 ## Asset provenance
 
